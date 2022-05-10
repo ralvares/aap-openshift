@@ -2,7 +2,7 @@
 
 ## Installs the Automation Controller
 ```
-oc apply -k ansible-automation-platform/operator/overlays/stable-2.1
+oc apply -k aap-openshift/operator/overlays/stable-2.1
 ```
 
 ## Prerequisites
@@ -17,5 +17,5 @@ oc create secret generic manifest -n ansible-automation-platform --from-file=man
 
 ## Installs the Automation Controller Instance
 ```
-oc apply -k ansible-automation-platform/instance/overlays/default
+oc apply -k aap-openshift/instance/overlays/default
 ```

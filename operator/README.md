@@ -5,5 +5,5 @@ Installs the Ansible Automation Platform operator.
 ## Usage
 
 ```
-oc apply -k ansible-automation-platform/operator/overlays/<channel>
+oc apply -k aap-openshift/operator/overlays/<channel>
 ```

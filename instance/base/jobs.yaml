@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
+  name: upload-manifest-to-aap
+  namespace: ansible-automation-platform
+spec:
+  template:
+    spec:
+      containers:
+        - image: registry.redhat.io/openshift4/ose-cli:v4.9
+          command:
+            - /bin/bash
+            - -c
+            - |
+              export HOME=/tmp/pull
+              set -x
+              echo ""
+              echo "========================"
+              echo "Uploading Manifest to AAP..."
+              sleep 180
+              while :
+              do
+              USER=$(oc get AutomationController -n ansible-automation-platform -o=jsonpath='{.items..status.adminUser}')
+
+              PASS=$(oc get -n ansible-automation-platform secret $(oc get AutomationController -n ansible-automation-platform -o=jsonpath='{.items..status.adminPasswordSecret}') -o go-template='{{index .data "password" | base64decode}}')
+
+              FILENAME=$(oc get -n ansible-automation-platform secret manifest -o=jsonpath='{.data.manifest}')
+              
+              ROUTE=$(oc get AutomationController -n ansible-automation-platform -o=jsonpath='{.items..status.URL}')
+
+              header="Content-Type: application/json"
+              request_body=$(cat <<EOF
+              {
+              "eula_accepted": true,
+              "manifest": "$FILENAME"
+              }
+              EOF
+              )
+
+              _RETURN=$(curl -o /dev/null -k -i --user $USER:$PASS -sL --post302 -w "%{http_code}" -H "$header" -X POST -d "$request_body" "$ROUTE/api/v2/config/")
+
+              if [ $_RETURN == "200" ] ;
+               then
+               echo "OK: Manifest uploaded"
+               break
+              fi
+              sleep 60
+              done
+              echo "========================"
+          imagePullPolicy: Always
+          name: upload-manifest-to-aap
+
+      serviceAccount: automation-controller-operator-controller-manager
+      serviceAccountName: automation-controller-operator-controller-manager
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 3
